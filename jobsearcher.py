@@ -7,25 +7,26 @@ from bs4 import BeautifulSoup
 import argparse
 
 
-# https://www.indeed.com/jobs?q=software+developer&l=46239&explvl=entry_level&sort=date
+# Globals
+loc_zip = "46239"
 
-def scrape_jobs(location=None):
-    jobs = indeed_jobs()
+def scrape_jobs(location):
+    jobs = indeed_jobs(location)
     jobs = monster_jobs(location)
     return jobs
 
-def indeed_jobs():
-    loc = "46239"
+def indeed_jobs(loc):
     URL = f"https://www.indeed.com/jobs?q=software+developer&l={loc}&explvl=entry_level&sort=date"
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, "html.parser")
     results = soup.find(id="resultsBodyContent")
     job_elems = results.find_all("div", "jobsearch-SerpJobCard")
+    # print(job_elems)
     for job_elem in job_elems:
         # keep in mind that each job_elem is another BeautifulSoup object!
         title_elem = job_elem.find("h2")
         company_elem = job_elem.find("span", "company")
-        location_elem = job_elem.find("div", "recJobLoc")
+        location_elem = job_elem.find("span", "location")
         link_elem = job_elem.find("a", "jobtitle turnstileLink")
         if None in (title_elem, company_elem, location_elem):
             continue
@@ -34,6 +35,7 @@ def indeed_jobs():
         print("https://www.indeed.com" + link_elem["href"])
         print(company_elem.text.strip())
         print(location_elem.text.strip())
+        print()
     return results
 
 def monster_jobs(location=None):
@@ -104,7 +106,7 @@ my_parser = argparse.ArgumentParser(
     prog="jobs", description="Find Developer Jobs"
 )
 my_parser.add_argument(
-    "-location", metavar="location", type=str, help="The location of the job"
+    "-location", metavar="location", type=str, help="The location of the job", default=loc_zip
 )
 my_parser.add_argument(
     "-word", metavar="word", type=str, help="What keyword to filter by"
@@ -118,3 +120,4 @@ if keyword:
     filter_jobs_by_keyword(results, keyword.lower())
 else:
     print_all_jobs(results)
+    # print("done")
